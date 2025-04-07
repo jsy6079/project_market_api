@@ -24,6 +24,29 @@ public class MarketDataInserter {
 
     public static void insertPrices(List<MarketPrice> prices) throws Exception {
         Connection conn = DBUtil.getConnection();
+        
+        // 🔥 여기서 날짜별로 5개 초과시 가장 오래된 날짜 삭제
+        String dateQuery = "SELECT DISTINCT DATE(productRegDate) as regDate FROM ProductPrice ORDER BY regDate ASC";
+        PreparedStatement dateStmt = conn.prepareStatement(dateQuery);
+        ResultSet dateRs = dateStmt.executeQuery();
+
+        List<String> dateList = new ArrayList<>();
+        while (dateRs.next()) {
+            dateList.add(dateRs.getString("regDate"));
+        }
+        dateRs.close();
+        dateStmt.close();
+
+        if (dateList.size() >= 5) {
+            String oldestDate = dateList.get(0);
+            System.out.println("오래된 날짜 삭제: " + oldestDate);
+
+            String deleteQuery = "DELETE FROM ProductPrice WHERE DATE(productRegDate) = ?";
+            PreparedStatement deleteStmt = conn.prepareStatement(deleteQuery);
+            deleteStmt.setString(1, oldestDate);
+            deleteStmt.executeUpdate();
+            deleteStmt.close();
+        }
 
         // storeId -> marketId 매핑
         Map<Long, Long> storeToMarket = new HashMap<>();
