@@ -11,7 +11,9 @@ public class Main {
         LocalDate yesterday = LocalDate.now().minusDays(1);
         String today = yesterday.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
+        System.out.println("시스템 날짜: " + LocalDate.now());
         System.out.println("조회 날짜: " + today);
+
 
         // API 호출
         List<MarketPrice> result = KamisApiFetcher.fetchPrices(200, today);
