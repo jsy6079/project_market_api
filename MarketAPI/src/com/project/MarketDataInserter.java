@@ -25,28 +25,54 @@ public class MarketDataInserter {
     public static void insertPrices(List<MarketPrice> prices) throws Exception {
         Connection conn = DBUtil.getConnection();
         
-        // 🔥 여기서 날짜별로 5개 초과시 가장 오래된 날짜 삭제
-        String dateQuery = "SELECT DISTINCT DATE(productRegDate) as regDate FROM ProductPrice ORDER BY regDate ASC";
-        PreparedStatement dateStmt = conn.prepareStatement(dateQuery);
-        ResultSet dateRs = dateStmt.executeQuery();
+     // 모든 storeId, productId 조합을 가져옴
+        String pairQuery = "SELECT storeId, productId FROM ProductPrice GROUP BY storeId, productId";
+        PreparedStatement pairStmt = conn.prepareStatement(pairQuery);
+        ResultSet pairRs = pairStmt.executeQuery();
 
-        List<String> dateList = new ArrayList<>();
-        while (dateRs.next()) {
-            dateList.add(dateRs.getString("regDate"));
+        while (pairRs.next()) {
+            long storeId = pairRs.getLong("storeId");
+            long productId = pairRs.getLong("productId");
+
+            // 해당 조합의 등록일 기준 정렬된 id 목록을 가져옴
+            String priceQuery = "SELECT id FROM ProductPrice WHERE storeId = ? AND productId = ? ORDER BY productRegDate ASC";
+            PreparedStatement priceStmt = conn.prepareStatement(priceQuery);
+            priceStmt.setLong(1, storeId);
+            priceStmt.setLong(2, productId);
+            ResultSet priceRs = priceStmt.executeQuery();
+
+            List<Long> ids = new ArrayList<>();
+            while (priceRs.next()) {
+                ids.add(priceRs.getLong("id"));
+            }
+            priceRs.close();
+            priceStmt.close();
+
+            // 5개 초과 시 오래된 것부터 삭제
+            if (ids.size() > 5) {
+                int numToDelete = ids.size() - 5;
+                List<Long> toDelete = ids.subList(0, numToDelete);
+
+                String deleteQuery = "DELETE FROM ProductPrice WHERE id = ?";
+                PreparedStatement deleteStmt = conn.prepareStatement(deleteQuery);
+                
+                for (Long id : toDelete) {
+                    deleteStmt.setLong(1, id);
+                    int deleted = deleteStmt.executeUpdate();
+                    if (deleted > 0) {
+                        System.out.println("삭제된 ProductPrice ID: " + id + " (storeId: " + storeId + ", productId: " + productId + ")");
+                    }
+                }
+
+                deleteStmt.close();
+            }
         }
-        dateRs.close();
-        dateStmt.close();
 
-        if (dateList.size() >= 5) {
-            String oldestDate = dateList.get(0);
-            System.out.println("오래된 날짜 삭제: " + oldestDate);
+        pairRs.close();
+        pairStmt.close();
 
-            String deleteQuery = "DELETE FROM ProductPrice WHERE DATE(productRegDate) = ?";
-            PreparedStatement deleteStmt = conn.prepareStatement(deleteQuery);
-            deleteStmt.setString(1, oldestDate);
-            deleteStmt.executeUpdate();
-            deleteStmt.close();
-        }
+        
+        
 
         // storeId -> marketId 매핑
         Map<Long, Long> storeToMarket = new HashMap<>();
@@ -116,13 +142,13 @@ public class MarketDataInserter {
         // 점포 수에 따른 퍼센트 지정
         double percent;
         if (storeCount == 3) {
-            percent = 0.08;
+            percent = 0.25; 
         } else if (storeCount == 4) {
-            percent = 0.05;
+            percent = 0.15;
         } else if (storeCount == 5) {
-            percent = 0.03;
+            percent = 0.10;
         } else {
-            percent = 0.01; // 기본 0.01
+            percent = 0.05;
         }
 
         double min = 1.0 - percent;
