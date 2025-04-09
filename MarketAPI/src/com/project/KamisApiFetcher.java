@@ -39,7 +39,7 @@ public class KamisApiFetcher {
         new TargetItem("4304", "갈비", "갈비"), 
         new TargetItem("4301", "갈비", "1등급"), 
         new TargetItem("9908", "흰우유", "흰우유"), 
-        new TargetItem("611", "국산(냉동)(1마리)", "大"), 
+        new TargetItem("611", "국산(신선 냉장)(1마리)", "大"), 
         new TargetItem("613", "국산(냉동)(1마리)", "大"),
         new TargetItem("644", "굴(1kg)", "상품")
     );
