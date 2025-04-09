@@ -108,7 +108,7 @@ public class MarketDataInserter {
         ps.close();
         conn.close();
     }
-
+   
     private static long adjustPrice(long basePrice, long storeId, Map<Long, Long> storeToMarket, Map<Long, Integer> marketStoreCount) {
         Long marketId = storeToMarket.get(storeId);
         int storeCount = marketStoreCount.getOrDefault(marketId, 1);
@@ -129,6 +129,9 @@ public class MarketDataInserter {
         double max = 1.0 + percent;
         double multiplier = min + Math.random() * (max - min);
 
-        return Math.round(basePrice * multiplier);
+        long rawPrice = Math.round(basePrice * multiplier);
+
+        return (rawPrice / 100) * 100;
     }
+
 }
