@@ -35,7 +35,7 @@ public class MarketDataInserter {
             long productId = pairRs.getLong("productId");
 
             // 해당 조합의 등록일 기준 정렬된 id 목록을 가져옴
-            String priceQuery = "SELECT id FROM ProductPrice WHERE storeId = ? AND productId = ? ORDER BY productRegDate ASC";
+            String priceQuery = "SELECT productPriceId FROM ProductPrice WHERE storeId = ? AND productId = ? ORDER BY productRegDate ASC";
             PreparedStatement priceStmt = conn.prepareStatement(priceQuery);
             priceStmt.setLong(1, storeId);
             priceStmt.setLong(2, productId);
@@ -43,7 +43,7 @@ public class MarketDataInserter {
 
             List<Long> ids = new ArrayList<>();
             while (priceRs.next()) {
-                ids.add(priceRs.getLong("id"));
+                ids.add(priceRs.getLong("productPriceId"));
             }
             priceRs.close();
             priceStmt.close();
@@ -53,7 +53,7 @@ public class MarketDataInserter {
                 int numToDelete = ids.size() - 5;
                 List<Long> toDelete = ids.subList(0, numToDelete);
 
-                String deleteQuery = "DELETE FROM ProductPrice WHERE id = ?";
+                String deleteQuery = "DELETE FROM ProductPrice WHERE productPriceId = ?";
                 PreparedStatement deleteStmt = conn.prepareStatement(deleteQuery);
                 
                 for (Long id : toDelete) {
